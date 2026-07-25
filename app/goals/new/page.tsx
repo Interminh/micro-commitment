@@ -1,8 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { CreateCommitmentForm } from "@/components/CreateCommitmentForm";
+import { CreateGoalForm } from "@/components/CreateGoalForm";
 
-export default async function NewCommitmentPage({
+export default async function NewGoalPage({
   searchParams,
 }: {
   searchParams: Promise<{ groupId?: string }>;
@@ -26,20 +26,32 @@ export default async function NewCommitmentPage({
 
   const groupName = (membership as unknown as { groups: { name: string } | null }).groups?.name;
 
+  const { count: existingGoalCount } = await supabase
+    .from("goals")
+    .select("id", { count: "exact", head: true })
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .eq("archived", false);
+
+  const isFirstGoal = (existingGoalCount ?? 0) === 0;
+
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center px-6 py-16">
-      <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
-        Step 2 of 2
-      </p>
+      {isFirstGoal && (
+        <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
+          Step 2 of 2
+        </p>
+      )}
       <h1 className="mt-2 text-2xl font-semibold tracking-tight">
-        Set your commitment{groupName ? ` in ${groupName}` : ""}
+        {isFirstGoal ? "Set your first goal" : "Add another goal"}
+        {groupName ? ` in ${groupName}` : ""}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
         Keep it small and concrete: one clear yes/no action per day.
       </p>
 
       <div className="mt-8 rounded-xl border border-border bg-surface p-5">
-        <CreateCommitmentForm groupId={groupId} />
+        <CreateGoalForm groupId={groupId} />
       </div>
     </main>
   );

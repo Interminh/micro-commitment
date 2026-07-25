@@ -1,13 +1,25 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useRef } from "react";
 import { createGroup } from "@/lib/actions";
 
 export function CreateGroupForm() {
   const [state, action, pending] = useActionState(createGroup, undefined);
+  const timezoneRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    try {
+      if (timezoneRef.current) {
+        timezoneRef.current.value = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      }
+    } catch {
+      // Stick with UTC if the browser can't tell us its timezone.
+    }
+  }, []);
 
   return (
     <form action={action} className="mt-3 flex flex-col gap-3">
+      <input ref={timezoneRef} type="hidden" name="timezone" defaultValue="UTC" />
       <input
         name="name"
         required

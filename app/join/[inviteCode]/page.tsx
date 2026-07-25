@@ -90,5 +90,5 @@ export default async function JoinPage({
     );
   }
 
-  redirect(`/commitments/new?groupId=${group.id}`);
+  redirect(`/goals/new?groupId=${group.id}`);
 }
