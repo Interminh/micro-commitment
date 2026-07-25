@@ -3,9 +3,14 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { getBaseUrl } from "@/lib/site-url";
 import { signOut } from "@/lib/actions";
-import { MemberRow } from "@/components/MemberRow";
+import { MemberRow, type MemberGoal } from "@/components/MemberRow";
+import { GroupHeatmap } from "@/components/GroupHeatmap";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
-import type { CheckInStatus, Schedule } from "@/lib/types";
+import { isDueOn } from "@/lib/goals";
+import { dateRange, buildPersonCells, aggregateCells } from "@/lib/heatmap";
+import type { Goal, DailyLog, DailyLogStatus } from "@/lib/types";
+
+const MAX_HISTORY_DAYS = 365;
 
 export default async function GroupPage({
   params,
@@ -41,52 +46,80 @@ export default async function GroupPage({
     .eq("group_id", groupId)
     .order("joined_at", { ascending: true });
 
-  const { data: commitments } = await supabase
-    .from("commitments")
-    .select("id, user_id, label, schedule")
+  const { data: goals } = await supabase
+    .from("goals")
+    .select("id, user_id, name, active_days, current_streak, created_at")
     .eq("group_id", groupId)
-    .eq("active", true);
+    .eq("archived", false);
 
-  const commitmentIds = (commitments ?? []).map((c) => c.id);
+  const allGoals = (goals ?? []) as Pick<
+    Goal,
+    "id" | "user_id" | "name" | "active_days" | "current_streak" | "created_at"
+  >[];
+
   const today = new Date().toISOString().slice(0, 10);
-  const weekday = new Date().getDay();
-  const isWeekend = weekday === 0 || weekday === 6;
+  const todayWeekday = new Date().getDay();
 
-  const { data: checkIns } =
-    commitmentIds.length > 0
+  const earliestGoalDate =
+    allGoals.length > 0
+      ? allGoals.reduce((min, g) => (g.created_at < min ? g.created_at : min), allGoals[0].created_at).slice(0, 10)
+      : today;
+  const fullRange = dateRange(earliestGoalDate, today);
+  const cappedStart =
+    fullRange.length > MAX_HISTORY_DAYS ? fullRange[fullRange.length - MAX_HISTORY_DAYS] : earliestGoalDate;
+  const dates = allGoals.length > 0 ? dateRange(cappedStart, today) : [];
+
+  const goalIds = allGoals.map((g) => g.id);
+  const { data: logs } =
+    goalIds.length > 0
       ? await supabase
-          .from("check_ins")
-          .select("commitment_id, status")
-          .eq("date", today)
-          .in("commitment_id", commitmentIds)
+          .from("daily_logs")
+          .select("id, goal_id, date, status, completed_at")
+          .in("goal_id", goalIds)
+          .gte("date", cappedStart)
       : { data: [] };
 
-  const { data: streaks } =
-    commitmentIds.length > 0
-      ? await supabase
-          .from("streaks")
-          .select("commitment_id, current_streak")
-          .in("commitment_id", commitmentIds)
-      : { data: [] };
-
-  const commitmentByUser = new Map(
-    (commitments ?? []).map((c) => [c.user_id, c]),
-  );
-  const checkInByCommitment = new Map(
-    (checkIns ?? []).map((c) => [c.commitment_id, c.status as CheckInStatus]),
-  );
-  const streakByCommitment = new Map(
-    (streaks ?? []).map((s) => [s.commitment_id, s.current_streak]),
+  const logsByGoalAndDate = new Map<string, DailyLog>(
+    (logs ?? []).map((l) => [`${l.goal_id}:${l.date}`, l as DailyLog]),
   );
 
   const baseUrl = await getBaseUrl();
   const inviteLink = `${baseUrl}/join/${group.invite_code}`;
 
-  const missedToday = (members ?? []).filter((m) => {
-    const profile = m.profiles as unknown as { id: string } | null;
-    const commitment = profile ? commitmentByUser.get(profile.id) : undefined;
-    return commitment && checkInByCommitment.get(commitment.id) === "missed";
-  }).length;
+  const memberEntries = (members ?? [])
+    .map((m) => {
+      const profile = m.profiles as unknown as {
+        id: string;
+        name: string | null;
+        avatar_url: string | null;
+      } | null;
+      if (!profile) return null;
+
+      const userGoals = allGoals.filter((g) => g.user_id === profile.id);
+      const cells = dates.length > 0 ? buildPersonCells(dates, userGoals, logsByGoalAndDate) : [];
+
+      const memberGoals: MemberGoal[] = userGoals.map((g) => ({
+        id: g.id,
+        name: g.name,
+        currentStreak: g.current_streak,
+        dueToday: isDueOn(g.active_days, todayWeekday),
+        loggedStatus: (logsByGoalAndDate.get(`${g.id}:${today}`)?.status as DailyLogStatus | undefined) ?? null,
+      }));
+
+      return { profile, cells, memberGoals };
+    })
+    .filter((m): m is NonNullable<typeof m> => m !== null);
+
+  const groupCells = aggregateCells(memberEntries.map((m) => m.cells));
+
+  const missedToday = memberEntries.reduce(
+    (count, m) => count + m.memberGoals.filter((g) => g.loggedStatus === "missed").length,
+    0,
+  );
+
+  const currentUserHasGoals = memberEntries.some(
+    (m) => m.profile.id === user.id && m.memberGoals.length > 0,
+  );
 
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
@@ -134,50 +167,32 @@ export default async function GroupPage({
         <InviteLinkCard link={inviteLink} />
       </div>
 
+      {groupCells.length > 0 && (
+        <div className="mt-6">
+          <GroupHeatmap cells={groupCells} />
+        </div>
+      )}
+
       <ul className="mt-8 flex flex-col gap-2">
-        {(members ?? []).map((m) => {
-          const profile = m.profiles as unknown as {
-            id: string;
-            name: string | null;
-            avatar_url: string | null;
-          } | null;
-          if (!profile) return null;
-
-          const commitment = commitmentByUser.get(profile.id);
-          const schedule = commitment?.schedule as Schedule | undefined;
-          const dueToday = schedule === "weekdays" ? !isWeekend : true;
-          const status = commitment
-            ? checkInByCommitment.get(commitment.id) ?? null
-            : null;
-          const streak = commitment
-            ? streakByCommitment.get(commitment.id) ?? 0
-            : 0;
-
-          return (
-            <MemberRow
-              key={profile.id}
-              name={profile.name ?? "Someone"}
-              avatarUrl={profile.avatar_url}
-              isSelf={profile.id === user.id}
-              commitmentLabel={commitment?.label ?? null}
-              commitmentId={commitment?.id ?? null}
-              currentStreak={streak}
-              todayStatus={status}
-              dueToday={dueToday}
-              groupId={group.id}
-            />
-          );
-        })}
+        {memberEntries.map(({ profile, cells, memberGoals }) => (
+          <MemberRow
+            key={profile.id}
+            name={profile.name ?? "Someone"}
+            avatarUrl={profile.avatar_url}
+            isSelf={profile.id === user.id}
+            groupId={group.id}
+            goals={memberGoals}
+            heatmapCells={cells}
+          />
+        ))}
       </ul>
 
-      {!commitmentByUser.get(user.id) && (
-        <Link
-          href={`/commitments/new?groupId=${group.id}`}
-          className="mt-6 inline-block text-sm font-medium text-brand hover:underline"
-        >
-          Set your commitment in this group →
-        </Link>
-      )}
+      <Link
+        href={`/goals/new?groupId=${group.id}`}
+        className="mt-6 inline-block text-sm font-medium text-brand hover:underline"
+      >
+        {currentUserHasGoals ? "+ Add another goal" : "Set your first goal in this group →"}
+      </Link>
     </main>
   );
 }
