@@ -3,7 +3,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { headers } from "next/headers";
+import { getBaseUrl } from "@/lib/site-url";
 import type { Schedule } from "@/lib/types";
 
 function randomInviteCode(): string {
@@ -18,8 +18,7 @@ function randomInviteCode(): string {
 
 export async function signInWithGoogle(next?: string) {
   const supabase = await createClient();
-  const origin = (await headers()).get("origin");
-  const callback = new URL("/auth/callback", origin ?? undefined);
+  const callback = new URL("/auth/callback", await getBaseUrl());
   if (next) callback.searchParams.set("next", next);
 
   const { data, error } = await supabase.auth.signInWithOAuth({
