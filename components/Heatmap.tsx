@@ -9,6 +9,12 @@ const MONTH_LABELS = [
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 ];
 
+interface TooltipState {
+  label: string;
+  x: number;
+  y: number;
+}
+
 function bucketColor(completed: number, scheduled: number): string {
   if (scheduled === 0) return "var(--color-heat-unscheduled)";
   const ratio = completed / scheduled;
@@ -24,8 +30,9 @@ function cellLabel(cell: DayCell): string {
     day: "numeric",
     timeZone: "UTC",
   });
-  if (cell.scheduled === 0) return `No goals scheduled on ${formatted}`;
-  return `${cell.completed}/${cell.scheduled} goals done on ${formatted}`;
+  return cell.scheduled === 0
+    ? `No goals scheduled on ${formatted}`
+    : `${cell.completed}/${cell.scheduled} goals completed on ${formatted}`;
 }
 
 // Groups a contiguous, ascending-date array of cells into GitHub-style
@@ -44,6 +51,7 @@ function toColumns(cells: DayCell[]): (DayCell | null)[][] {
 
 export function Heatmap({ cells }: { cells: DayCell[] }) {
   const [showFullHistory, setShowFullHistory] = useState(false);
+  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const allColumns = useMemo(() => toColumns(cells), [cells]);
   const columns = showFullHistory ? allColumns : allColumns.slice(-DEFAULT_WEEKS);
@@ -65,6 +73,11 @@ export function Heatmap({ cells }: { cells: DayCell[] }) {
     return <p className="text-xs text-muted-foreground">No history yet.</p>;
   }
 
+  function showTooltip(e: React.MouseEvent<HTMLDivElement>, cell: DayCell) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ label: cellLabel(cell), x: rect.right, y: rect.top });
+  }
+
   return (
     <div>
       <div className="overflow-x-auto pb-1">
@@ -81,20 +94,15 @@ export function Heatmap({ cells }: { cells: DayCell[] }) {
               <div key={colIndex} className="flex flex-col gap-[3px]">
                 {column.map((cell, rowIndex) =>
                   cell ? (
-                    <div key={rowIndex} className="group/cell relative">
-                      <div
-                        role="img"
-                        aria-label={cellLabel(cell)}
-                        className="h-[11px] w-[11px] rounded-[2px]"
-                        style={{ backgroundColor: bucketColor(cell.completed, cell.scheduled) }}
-                      />
-                      <div
-                        role="tooltip"
-                        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground opacity-0 shadow-lg transition-opacity duration-75 group-hover/cell:opacity-100"
-                      >
-                        {cellLabel(cell)}
-                      </div>
-                    </div>
+                    <div
+                      key={rowIndex}
+                      role="img"
+                      aria-label={cellLabel(cell)}
+                      onMouseEnter={(e) => showTooltip(e, cell)}
+                      onMouseLeave={() => setTooltip(null)}
+                      className="h-[11px] w-[11px] rounded-[2px]"
+                      style={{ backgroundColor: bucketColor(cell.completed, cell.scheduled) }}
+                    />
                   ) : (
                     <div key={rowIndex} className="h-[11px] w-[11px]" />
                   ),
@@ -104,6 +112,16 @@ export function Heatmap({ cells }: { cells: DayCell[] }) {
           </div>
         </div>
       </div>
+
+      {tooltip && (
+        <div
+          role="tooltip"
+          className="pointer-events-none fixed z-50 -translate-y-full whitespace-nowrap rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground shadow-lg"
+          style={{ left: tooltip.x + 6, top: tooltip.y - 6 }}
+        >
+          {tooltip.label}
+        </div>
+      )}
 
       <div className="mt-2 flex items-center justify-between">
         <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
