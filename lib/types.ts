@@ -1,5 +1,5 @@
-export type Schedule = "daily" | "weekdays";
-export type CheckInStatus = "done" | "missed" | "pending";
+export type DailyLogStatus = "done" | "missed";
+export type UiStatus = DailyLogStatus | "pending" | "not_due";
 export type MemberRole = "organizer" | "member";
 
 export interface Profile {
@@ -14,30 +14,32 @@ export interface Group {
   name: string;
   invite_code: string;
   created_by: string;
+  timezone: string;
   created_at: string;
 }
 
-export interface Commitment {
+export interface Goal {
   id: string;
   user_id: string;
   group_id: string;
-  label: string;
-  schedule: Schedule;
-  active: boolean;
+  name: string;
+  active_days: number[];
+  archived: boolean;
+  current_streak: number;
+  longest_streak: number;
   created_at: string;
 }
 
-export interface Streak {
-  commitment_id: string;
-  current_streak: number;
-  longest_streak: number;
-  last_updated: string;
+export interface DailyLog {
+  id: string;
+  goal_id: string;
+  date: string;
+  status: DailyLogStatus;
+  completed_at: string | null;
 }
 
-export interface GroupMemberRow {
-  profile: Profile;
-  role: MemberRole;
-  commitment: Commitment | null;
-  streak: Streak | null;
-  todayStatus: CheckInStatus | null;
+export interface DayCell {
+  date: string;
+  completed: number;
+  scheduled: number;
 }
