@@ -4,7 +4,6 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getBaseUrl } from "@/lib/site-url";
-import type { Schedule } from "@/lib/types";
 
 function randomInviteCode(): string {
   // Short, URL-safe, unambiguous-enough code for a 5-15 person friend group.
@@ -41,7 +40,7 @@ export async function signOut() {
 
 export type ActionState = { error: string | null };
 
-export async function createCommitment(
+export async function createGoal(
   _prevState: ActionState | undefined,
   formData: FormData,
 ): Promise<ActionState> {
@@ -51,29 +50,55 @@ export async function createCommitment(
   } = await supabase.auth.getUser();
   if (!user) redirect("/");
 
-  const label = String(formData.get("label") ?? "").trim();
-  const schedule = String(formData.get("schedule") ?? "daily") as Schedule;
+  const name = String(formData.get("name") ?? "").trim();
   const groupId = String(formData.get("groupId") ?? "");
+  let activeDays: number[] = [];
+  try {
+    activeDays = JSON.parse(String(formData.get("activeDays") ?? "[]"));
+  } catch {
+    activeDays = [];
+  }
 
-  if (!label) return { error: "Give your commitment a short label." };
+  if (!name) return { error: "Give your goal a short name." };
   if (!groupId) return { error: "Missing group." };
+  if (!Array.isArray(activeDays) || activeDays.length === 0) {
+    return { error: "Pick at least one day." };
+  }
 
-  const { error } = await supabase.from("commitments").insert({
+  const { error } = await supabase.from("goals").insert({
     user_id: user.id,
     group_id: groupId,
-    label,
-    schedule,
+    name,
+    active_days: activeDays,
   });
 
   if (error) {
-    if (error.code === "23505") {
-      return { error: "You already have an active commitment in this group." };
-    }
     return { error: error.message };
   }
 
   revalidatePath(`/group/${groupId}`);
   redirect(`/group/${groupId}`);
+}
+
+export async function archiveGoal(goalId: string, groupId: string): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  const { error } = await supabase
+    .from("goals")
+    .update({ archived: true })
+    .eq("id", goalId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/group/${groupId}`);
+  return { error: null };
 }
 
 export async function createGroup(
@@ -89,11 +114,12 @@ export async function createGroup(
   const name = String(formData.get("name") ?? "").trim();
   if (!name) return { error: "Give your group a name." };
 
+  const timezone = String(formData.get("timezone") ?? "UTC") || "UTC";
   const inviteCode = randomInviteCode();
 
   const { data: group, error: groupError } = await supabase
     .from("groups")
-    .insert({ name, invite_code: inviteCode, created_by: user.id })
+    .insert({ name, invite_code: inviteCode, created_by: user.id, timezone })
     .select()
     .single();
 
@@ -111,7 +137,7 @@ export async function createGroup(
     return { error: memberError.message };
   }
 
-  redirect(`/commitments/new?groupId=${group.id}`);
+  redirect(`/goals/new?groupId=${group.id}`);
 }
 
 export async function joinGroupByCode(
@@ -150,15 +176,15 @@ export async function joinGroupByCode(
   }
 
   // 23505 = already a member (rejoining via the link). They likely already
-  // have a commitment, so go straight to the group instead of re-prompting.
+  // have goals set up, so go straight to the group instead of re-prompting.
   if (memberError?.code === "23505") {
     redirect(`/group/${group.id}`);
   }
 
-  redirect(`/commitments/new?groupId=${group.id}`);
+  redirect(`/goals/new?groupId=${group.id}`);
 }
 
-export async function submitCheckIn(commitmentId: string, groupId: string, status: "done" | "missed") {
+export async function submitDailyLog(goalId: string, groupId: string, status: "done" | "missed") {
   const supabase = await createClient();
   const {
     data: { user },
@@ -167,16 +193,16 @@ export async function submitCheckIn(commitmentId: string, groupId: string, statu
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const { error } = await supabase.from("check_ins").insert({
-    commitment_id: commitmentId,
+  const { error } = await supabase.from("daily_logs").insert({
+    goal_id: goalId,
     date: today,
     status,
-    submitted_at: new Date().toISOString(),
+    completed_at: new Date().toISOString(),
   });
 
   if (error) {
     if (error.code === "23505") {
-      return { error: "Already checked in today." };
+      return { error: "Already logged today." };
     }
     return { error: error.message };
   }
