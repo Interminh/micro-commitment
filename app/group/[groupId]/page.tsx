@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { headers } from "next/headers";
+import Link from "next/link";
+import { getBaseUrl } from "@/lib/site-url";
 import { signOut } from "@/lib/actions";
 import { MemberRow } from "@/components/MemberRow";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
@@ -78,8 +79,8 @@ export default async function GroupPage({
     (streaks ?? []).map((s) => [s.commitment_id, s.current_streak]),
   );
 
-  const origin = (await headers()).get("origin") ?? "";
-  const inviteLink = `${origin}/join/${group.invite_code}`;
+  const baseUrl = await getBaseUrl();
+  const inviteLink = `${baseUrl}/join/${group.invite_code}`;
 
   const missedToday = (members ?? []).filter((m) => {
     const profile = m.profiles as unknown as { id: string } | null;
@@ -91,7 +92,13 @@ export default async function GroupPage({
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">{group.name}</h1>
+          <Link
+            href="/"
+            className="text-xs font-medium text-muted-foreground hover:text-foreground hover:underline"
+          >
+            ← Your groups
+          </Link>
+          <h1 className="mt-1 text-2xl font-semibold tracking-tight">{group.name}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {members?.length ?? 0} member{members?.length === 1 ? "" : "s"}
             {missedToday > 0 && (
@@ -164,12 +171,12 @@ export default async function GroupPage({
       </ul>
 
       {!commitmentByUser.get(user.id) && (
-        <a
+        <Link
           href={`/commitments/new?groupId=${group.id}`}
           className="mt-6 inline-block text-sm font-medium text-brand hover:underline"
         >
           Set your commitment in this group →
-        </a>
+        </Link>
       )}
     </main>
   );

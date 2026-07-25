@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
-import { signInWithGoogle } from "@/lib/actions";
+import { signInWithGoogle, signOut } from "@/lib/actions";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default async function LandingPage({
   searchParams,
@@ -14,14 +15,60 @@ export default async function LandingPage({
   } = await supabase.auth.getUser();
 
   if (user) {
-    const { data: membership } = await supabase
+    const { data: memberships } = await supabase
       .from("group_members")
-      .select("group_id")
+      .select("group_id, groups(id, name)")
       .eq("user_id", user.id)
-      .limit(1)
-      .maybeSingle();
+      .order("joined_at", { ascending: true });
 
-    redirect(membership ? `/group/${membership.group_id}` : "/onboarding");
+    const groups = (memberships ?? [])
+      .map((m) => m.groups as unknown as { id: string; name: string } | null)
+      .filter((g): g is { id: string; name: string } => g !== null);
+
+    if (groups.length === 0) {
+      redirect("/onboarding");
+    }
+
+    return (
+      <main className="mx-auto w-full max-w-md flex-1 px-6 py-12">
+        <div className="flex items-start justify-between gap-4">
+          <h1 className="text-2xl font-semibold tracking-tight">Your groups</h1>
+          <form
+            action={async () => {
+              "use server";
+              await signOut();
+            }}
+          >
+            <button
+              type="submit"
+              className="cursor-pointer rounded-md border border-border px-3 py-1.5 text-xs font-medium text-muted-foreground transition-colors hover:border-foreground/30 hover:text-foreground"
+            >
+              Sign out
+            </button>
+          </form>
+        </div>
+
+        <ul className="mt-6 flex flex-col gap-2">
+          {groups.map((group) => (
+            <li key={group.id}>
+              <Link
+                href={`/group/${group.id}`}
+                className="block rounded-lg border border-border bg-surface px-4 py-3 text-sm font-medium transition-colors hover:border-brand/40"
+              >
+                {group.name}
+              </Link>
+            </li>
+          ))}
+        </ul>
+
+        <Link
+          href="/onboarding"
+          className="mt-6 inline-block text-sm font-medium text-brand hover:underline"
+        >
+          + Start or join another group
+        </Link>
+      </main>
+    );
   }
 
   return (
