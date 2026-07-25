@@ -1,86 +1,130 @@
-import { StreakBadge } from "@/components/StreakBadge";
-import { CheckInButtons } from "@/components/CheckInButtons";
-import type { CheckInStatus } from "@/lib/types";
+"use client";
+
+import { useState } from "react";
+import { GoalRow } from "@/components/GoalRow";
+import { Heatmap } from "@/components/Heatmap";
+import { computeUiStatus } from "@/lib/goals";
+import type { DailyLogStatus, DayCell } from "@/lib/types";
+
+export interface MemberGoal {
+  id: string;
+  name: string;
+  currentStreak: number;
+  dueToday: boolean;
+  loggedStatus: DailyLogStatus | null;
+}
+
+const DOT_COLOR: Record<string, string> = {
+  done: "bg-success",
+  missed: "bg-danger",
+  pending: "bg-pending",
+};
 
 export function MemberRow({
   name,
   avatarUrl,
   isSelf,
-  commitmentLabel,
-  currentStreak,
-  todayStatus,
-  dueToday,
-  commitmentId,
   groupId,
+  goals,
+  heatmapCells,
 }: {
   name: string;
   avatarUrl: string | null;
   isSelf: boolean;
-  commitmentLabel: string | null;
-  currentStreak: number;
-  todayStatus: CheckInStatus | null;
-  dueToday: boolean;
-  commitmentId: string | null;
   groupId: string;
+  goals: MemberGoal[];
+  heatmapCells: DayCell[];
 }) {
-  const missed = todayStatus === "missed";
+  const [expanded, setExpanded] = useState(false);
+
+  const dueGoals = goals.filter((g) => g.dueToday);
+  const completedToday = dueGoals.filter((g) => g.loggedStatus === "done").length;
+  const anyMissedToday = dueGoals.some((g) => g.loggedStatus === "missed");
 
   return (
     <li
-      className={`flex items-center gap-3 rounded-lg border px-4 py-3 ${
-        missed ? "border-danger/30 bg-danger-bg" : "border-border bg-surface"
+      className={`rounded-lg border ${
+        anyMissedToday ? "border-danger/30 bg-danger-bg" : "border-border bg-surface"
       }`}
     >
-      <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-border text-sm font-medium text-muted-foreground">
-        {avatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          name.charAt(0).toUpperCase()
-        )}
-      </div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="flex w-full cursor-pointer items-center gap-3 px-4 py-3 text-left"
+      >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-full bg-border text-sm font-medium text-muted-foreground">
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+          ) : (
+            name.charAt(0).toUpperCase()
+          )}
+        </div>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium">
-          {name}
-          {isSelf && <span className="ml-1.5 text-xs text-muted-foreground">(you)</span>}
-        </p>
-        {commitmentLabel ? (
-          <p className="truncate text-xs text-muted-foreground">{commitmentLabel}</p>
-        ) : (
-          <p className="truncate text-xs text-muted-foreground italic">
-            No commitment set yet
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">
+            {name}
+            {isSelf && <span className="ml-1.5 text-xs text-muted-foreground">(you)</span>}
           </p>
-        )}
-      </div>
+          {dueGoals.length > 0 ? (
+            <div className="mt-1 flex items-center gap-1">
+              {dueGoals.map((g) => (
+                <span
+                  key={g.id}
+                  title={g.name}
+                  className={`h-1.5 w-1.5 rounded-full ${DOT_COLOR[computeUiStatus(true, g.loggedStatus)]}`}
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-xs text-muted-foreground italic">
+              {goals.length === 0 ? "No goals set yet" : "Nothing due today"}
+            </p>
+          )}
+        </div>
 
-      {commitmentLabel && <StreakBadge current={currentStreak} />}
-
-      <div className="shrink-0">
-        {!commitmentLabel ? null : !dueToday ? (
-          <span className="inline-flex items-center rounded-full bg-pending-bg px-2.5 py-1 text-xs font-medium text-pending">
-            Not due today
-          </span>
-        ) : isSelf && commitmentId ? (
-          <CheckInButtons
-            commitmentId={commitmentId}
-            groupId={groupId}
-            initialStatus={todayStatus}
-          />
-        ) : todayStatus === "done" ? (
-          <span className="inline-flex items-center rounded-full bg-success-bg px-2.5 py-1 text-xs font-medium text-success">
-            Done today
-          </span>
-        ) : todayStatus === "missed" ? (
-          <span className="inline-flex items-center rounded-full bg-danger-bg px-2.5 py-1 text-xs font-medium text-danger">
-            Missed
-          </span>
-        ) : (
-          <span className="inline-flex items-center rounded-full bg-pending-bg px-2.5 py-1 text-xs font-medium text-pending">
-            Pending
+        {dueGoals.length > 0 && (
+          <span className="shrink-0 font-mono text-sm text-muted-foreground tabular-nums">
+            {completedToday}/{dueGoals.length}
           </span>
         )}
-      </div>
+
+        <svg
+          viewBox="0 0 20 20"
+          className={`h-4 w-4 shrink-0 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
+          aria-hidden="true"
+        >
+          <path d="M5 8l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </button>
+
+      {expanded && (
+        <div className="border-t border-border px-4 py-3">
+          {goals.length === 0 ? (
+            <p className="text-xs text-muted-foreground italic">No goals set yet.</p>
+          ) : (
+            <div className="flex flex-col divide-y divide-border">
+              {goals.map((goal) => (
+                <GoalRow
+                  key={goal.id}
+                  goalId={goal.id}
+                  groupId={groupId}
+                  name={goal.name}
+                  currentStreak={goal.currentStreak}
+                  isDue={goal.dueToday}
+                  loggedStatus={goal.loggedStatus}
+                  isOwner={isSelf}
+                />
+              ))}
+            </div>
+          )}
+
+          <div className="mt-3">
+            <Heatmap cells={heatmapCells} />
+          </div>
+        </div>
+      )}
     </li>
   );
 }

@@ -1,26 +1,26 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { submitCheckIn } from "@/lib/actions";
-import type { CheckInStatus } from "@/lib/types";
+import { submitDailyLog } from "@/lib/actions";
+import type { DailyLogStatus } from "@/lib/types";
 
-export function CheckInButtons({
-  commitmentId,
+export function DailyLogButtons({
+  goalId,
   groupId,
   initialStatus,
 }: {
-  commitmentId: string;
+  goalId: string;
   groupId: string;
-  initialStatus: CheckInStatus | null;
+  initialStatus: DailyLogStatus | null;
 }) {
-  const [status, setStatus] = useState<CheckInStatus | null>(initialStatus);
+  const [status, setStatus] = useState<DailyLogStatus | null>(initialStatus);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  function submit(next: "done" | "missed") {
+  function submit(next: DailyLogStatus) {
     setError(null);
     startTransition(async () => {
-      const result = await submitCheckIn(commitmentId, groupId, next);
+      const result = await submitDailyLog(goalId, groupId, next);
       if (result.error) {
         setError(result.error);
       } else {

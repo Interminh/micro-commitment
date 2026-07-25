@@ -44,8 +44,8 @@ export function LeaveOrDeleteGroupButton({
         title={isHost ? `Delete "${groupName}"?` : `Leave "${groupName}"?`}
         description={
           isHost
-            ? "This deletes the group for everyone in it, along with all commitments, check-ins, and streaks. This can't be undone."
-            : "You'll lose access to this group and your commitment in it. You can rejoin later with an invite link."
+            ? "This deletes the group for everyone in it, along with all goals, logs, and streaks. This can't be undone."
+            : "You'll lose access to this group and your goals in it. You can rejoin later with an invite link."
         }
         confirmLabel={isHost ? "Delete group" : "Leave group"}
         danger
