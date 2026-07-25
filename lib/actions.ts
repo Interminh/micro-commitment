@@ -92,9 +92,6 @@ export async function createGroup(
 
   const inviteCode = randomInviteCode();
 
-  const { data: authCheck } = await supabase.rpc("debug_auth_uid" as never);
-  console.log("[createGroup] user.id =", user.id, "auth.uid() =", authCheck);
-
   const { data: group, error: groupError } = await supabase
     .from("groups")
     .insert({ name, invite_code: inviteCode, created_by: user.id })
@@ -102,7 +99,6 @@ export async function createGroup(
     .single();
 
   if (groupError || !group) {
-    console.log("[createGroup] insert error =", JSON.stringify(groupError, null, 2));
     return { error: groupError?.message ?? "Could not create group." };
   }
 
