@@ -3,6 +3,9 @@ import { signInWithGoogle, signOut } from "@/lib/actions";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AuthDomainNote } from "@/components/AuthDomainNote";
+import { LeaveOrDeleteGroupButton } from "@/components/LeaveOrDeleteGroupButton";
+import { firstNameOf } from "@/lib/user";
+import type { MemberRole } from "@/lib/types";
 
 export default async function LandingPage({
   searchParams,
@@ -18,22 +21,29 @@ export default async function LandingPage({
   if (user) {
     const { data: memberships } = await supabase
       .from("group_members")
-      .select("group_id, groups(id, name)")
+      .select("group_id, role, groups(id, name)")
       .eq("user_id", user.id)
       .order("joined_at", { ascending: true });
 
     const groups = (memberships ?? [])
-      .map((m) => m.groups as unknown as { id: string; name: string } | null)
-      .filter((g): g is { id: string; name: string } => g !== null);
+      .map((m) => {
+        const group = m.groups as unknown as { id: string; name: string } | null;
+        return group ? { ...group, role: m.role as MemberRole } : null;
+      })
+      .filter((g): g is { id: string; name: string; role: MemberRole } => g !== null);
 
     if (groups.length === 0) {
       redirect("/onboarding");
     }
 
+    const firstName = firstNameOf(user);
+
     return (
       <main className="mx-auto w-full max-w-md flex-1 px-6 py-12">
         <div className="flex items-start justify-between gap-4">
-          <h1 className="text-2xl font-semibold tracking-tight">Your groups</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {firstName ? `${firstName}'s Groups` : "Your Groups"}
+          </h1>
           <form
             action={async () => {
               "use server";
@@ -51,13 +61,26 @@ export default async function LandingPage({
 
         <ul className="mt-6 flex flex-col gap-2">
           {groups.map((group) => (
-            <li key={group.id}>
+            <li
+              key={group.id}
+              className="flex items-center gap-2 rounded-lg border border-border bg-surface px-4 py-3"
+            >
               <Link
                 href={`/group/${group.id}`}
-                className="block rounded-lg border border-border bg-surface px-4 py-3 text-sm font-medium transition-colors hover:border-brand/40"
+                className="min-w-0 flex-1 truncate text-sm font-medium hover:text-brand"
               >
                 {group.name}
+                {group.role === "organizer" && (
+                  <span className="ml-1.5 text-xs font-normal text-muted-foreground">
+                    (host)
+                  </span>
+                )}
               </Link>
+              <LeaveOrDeleteGroupButton
+                groupId={group.id}
+                groupName={group.name}
+                isHost={group.role === "organizer"}
+              />
             </li>
           ))}
         </ul>
@@ -83,7 +106,7 @@ export default async function LandingPage({
         </h1>
         <p className="mt-4 text-base text-muted-foreground text-balance">
           Set one small daily commitment. Your friend group sees every
-          check-in — and every miss.
+          check-in, and every miss.
         </p>
 
         {error && (

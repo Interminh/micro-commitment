@@ -149,7 +149,7 @@ export async function joinGroupByCode(
     return { error: memberError.message };
   }
 
-  // 23505 = already a member (rejoining via the link) — they likely already
+  // 23505 = already a member (rejoining via the link). They likely already
   // have a commitment, so go straight to the group instead of re-prompting.
   if (memberError?.code === "23505") {
     redirect(`/group/${group.id}`);
@@ -182,5 +182,43 @@ export async function submitCheckIn(commitmentId: string, groupId: string, statu
   }
 
   revalidatePath(`/group/${groupId}`);
+  return { error: null };
+}
+
+export async function leaveGroup(groupId: string): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  const { error } = await supabase
+    .from("group_members")
+    .delete()
+    .eq("group_id", groupId)
+    .eq("user_id", user.id);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/");
+  return { error: null };
+}
+
+export async function deleteGroup(groupId: string): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  const { error } = await supabase.from("groups").delete().eq("id", groupId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath("/");
   return { error: null };
 }
