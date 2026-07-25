@@ -81,14 +81,20 @@ export function Heatmap({ cells }: { cells: DayCell[] }) {
               <div key={colIndex} className="flex flex-col gap-[3px]">
                 {column.map((cell, rowIndex) =>
                   cell ? (
-                    <div
-                      key={rowIndex}
-                      role="img"
-                      aria-label={cellLabel(cell)}
-                      title={cellLabel(cell)}
-                      className="h-[11px] w-[11px] rounded-[2px]"
-                      style={{ backgroundColor: bucketColor(cell.completed, cell.scheduled) }}
-                    />
+                    <div key={rowIndex} className="group/cell relative">
+                      <div
+                        role="img"
+                        aria-label={cellLabel(cell)}
+                        className="h-[11px] w-[11px] rounded-[2px]"
+                        style={{ backgroundColor: bucketColor(cell.completed, cell.scheduled) }}
+                      />
+                      <div
+                        role="tooltip"
+                        className="pointer-events-none absolute bottom-full left-1/2 z-10 mb-1.5 -translate-x-1/2 whitespace-nowrap rounded-md border border-border bg-surface px-2 py-1 text-[11px] font-medium text-foreground opacity-0 shadow-lg transition-opacity duration-75 group-hover/cell:opacity-100"
+                      >
+                        {cellLabel(cell)}
+                      </div>
+                    </div>
                   ) : (
                     <div key={rowIndex} className="h-[11px] w-[11px]" />
                   ),
