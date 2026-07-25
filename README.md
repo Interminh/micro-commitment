@@ -2,14 +2,14 @@
 
 **Commit publicly. Fail publicly.**
 
-A social accountability app for friend groups — daily micro-commitments, public
+A social accountability app for friend groups: daily micro-commitments, public
 check-ins, streaks, and miss visibility.
 
 ## Stack
 
 - [Next.js 16](https://nextjs.org) (App Router, TypeScript)
 - [Tailwind CSS v4](https://tailwindcss.com)
-- [Supabase](https://supabase.com) — Postgres, Auth (Google OAuth), Row Level
+- [Supabase](https://supabase.com): Postgres, Auth (Google OAuth), Row Level
   Security
 
 ## Local setup

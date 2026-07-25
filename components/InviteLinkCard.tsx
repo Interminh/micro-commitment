@@ -11,7 +11,7 @@ export function InviteLinkCard({ link }: { link: string }) {
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {
-      // Clipboard API unavailable — user can still select and copy manually.
+      // Clipboard API unavailable; user can still select and copy manually.
     }
   }
 

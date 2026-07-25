@@ -2,7 +2,7 @@
 -- automatically, but that didn't take effect for tables created via the SQL
 -- editor here ("permission denied for table groups" on insert). RLS
 -- policies from 0001_init.sql still govern which *rows* are visible/
--- writable — these grants just allow the roles to touch the tables at all.
+-- writable; these grants just allow the roles to touch the tables at all.
 
 grant usage on schema public to anon, authenticated;
 

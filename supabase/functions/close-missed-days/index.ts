@@ -1,6 +1,6 @@
 // Daily cron job (spec 5.3): for every active commitment with no check-in
 // for "today" in its own local sense, insert a `missed` check-in. Runs with
-// the service role key so it bypasses RLS — this is the only writer allowed
+// the service role key so it bypasses RLS. This is the only writer allowed
 // to record a miss on a user's behalf.
 //
 // Deploy: supabase functions deploy close-missed-days

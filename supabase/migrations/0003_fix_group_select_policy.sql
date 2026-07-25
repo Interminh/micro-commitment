@@ -2,8 +2,8 @@
 -- groups": our createGroup() code does insert(...).select().single(), which
 -- RETURNING-filters the new row through the SELECT policy. The old SELECT
 -- policy only allowed rows in my_group_ids(), but the creator's
--- group_members row doesn't exist yet at the moment the group is inserted
--- — so the brand-new row failed visibility and Postgres reported it as an
+-- group_members row doesn't exist yet at the moment the group is inserted.
+-- The brand-new row failed visibility, and Postgres reported it as an
 -- RLS violation. Let the creator see their own group directly, regardless
 -- of membership timing.
 

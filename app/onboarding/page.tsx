@@ -33,8 +33,8 @@ export default async function OnboardingPage() {
         {hasGroups ? "Start or join another group" : "Start or join a group"}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        You&apos;ll set your daily commitment once you&apos;re in a group —
-        that&apos;s who sees it.
+        You&apos;ll set your daily commitment once you&apos;re in a group.
+        That&apos;s who sees it.
       </p>
 
       <section className="mt-8 rounded-xl border border-border bg-surface p-5">

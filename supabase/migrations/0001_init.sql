@@ -246,7 +246,7 @@ create policy "owner can submit today's check-in"
     and commitment_id in (select id from public.commitments where user_id = auth.uid())
   );
 
--- streaks: readable by group-mates; no client-side insert/update policy —
+-- streaks: readable by group-mates; no client-side insert/update policy;
 -- only the security-definer trigger (owned by the table owner) writes here.
 create policy "streaks are readable by group-mates"
   on public.streaks for select

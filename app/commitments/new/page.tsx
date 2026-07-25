@@ -35,7 +35,7 @@ export default async function NewCommitmentPage({
         Set your commitment{groupName ? ` in ${groupName}` : ""}
       </h1>
       <p className="mt-2 text-sm text-muted-foreground">
-        Keep it small and concrete — one clear yes/no action per day.
+        Keep it small and concrete: one clear yes/no action per day.
       </p>
 
       <div className="mt-8 rounded-xl border border-border bg-surface p-5">
