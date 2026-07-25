@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { signInWithGoogle, signOut } from "@/lib/actions";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import { AuthDomainNote } from "@/components/AuthDomainNote";
 
 export default async function LandingPage({
   searchParams,
@@ -107,6 +108,7 @@ export default async function LandingPage({
           </button>
         </form>
       </div>
+      <AuthDomainNote />
     </main>
   );
 }

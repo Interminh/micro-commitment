@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { signInWithGoogle } from "@/lib/actions";
+import { AuthDomainNote } from "@/components/AuthDomainNote";
 
 export default async function JoinPage({
   params,
@@ -57,6 +58,7 @@ export default async function JoinPage({
             Continue with Google
           </button>
         </form>
+        <AuthDomainNote />
       </main>
     );
   }
