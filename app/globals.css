@@ -17,6 +17,18 @@
   --danger-bg: #fdecef;
   --pending: #9096a0;
   --pending-bg: #f2f2f3;
+
+  /* Heatmap: single-hue sequential green ramp (0-20%, 20-40%, ... 80-100%),
+     validated with the dataviz skill's script against this surface. Two
+     distinct empty tones: a day with no goal scheduled reads lighter than a
+     day that was scheduled and fully missed. */
+  --heat-unscheduled: #f2f2f3;
+  --heat-empty: #e4e4e7;
+  --heat-1: #74c299;
+  --heat-2: #56b088;
+  --heat-3: #38976b;
+  --heat-4: #1d7a52;
+  --heat-5: #0a5c3d;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -37,6 +49,17 @@
     --danger-bg: #2c1319;
     --pending: #6b7079;
     --pending-bg: #1c1f24;
+
+    /* Dark-mode ramp, darkest-first: the near-zero step is intentionally
+       allowed to recede toward the dark surface (documented exception for
+       sequential magnitude ramps, vs. the stricter floor for ordinal ones). */
+    --heat-unscheduled: #1c1f24;
+    --heat-empty: #262b33;
+    --heat-1: #123d2c;
+    --heat-2: #1d6b4a;
+    --heat-3: #2a9163;
+    --heat-4: #3fb47f;
+    --heat-5: #6fd9a4;
   }
 }
 
@@ -57,6 +80,14 @@
   --color-danger-bg: var(--danger-bg);
   --color-pending: var(--pending);
   --color-pending-bg: var(--pending-bg);
+
+  --color-heat-unscheduled: var(--heat-unscheduled);
+  --color-heat-empty: var(--heat-empty);
+  --color-heat-1: var(--heat-1);
+  --color-heat-2: var(--heat-2);
+  --color-heat-3: var(--heat-3);
+  --color-heat-4: var(--heat-4);
+  --color-heat-5: var(--heat-5);
 
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
