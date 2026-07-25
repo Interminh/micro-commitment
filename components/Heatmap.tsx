@@ -25,7 +25,7 @@ function cellLabel(cell: DayCell): string {
     timeZone: "UTC",
   });
   if (cell.scheduled === 0) return `No goals scheduled on ${formatted}`;
-  return `${cell.completed} of ${cell.scheduled} completed on ${formatted}`;
+  return `${cell.completed}/${cell.scheduled} goals done on ${formatted}`;
 }
 
 // Groups a contiguous, ascending-date array of cells into GitHub-style

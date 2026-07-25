@@ -39,14 +39,9 @@ export function MemberRow({
 
   const dueGoals = goals.filter((g) => g.dueToday);
   const completedToday = dueGoals.filter((g) => g.loggedStatus === "done").length;
-  const anyMissedToday = dueGoals.some((g) => g.loggedStatus === "missed");
 
   return (
-    <li
-      className={`rounded-lg border ${
-        anyMissedToday ? "border-danger/30 bg-danger-bg" : "border-border bg-surface"
-      }`}
-    >
+    <li className="rounded-lg border border-border bg-surface">
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
