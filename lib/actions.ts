@@ -6,7 +6,7 @@ import { revalidatePath } from "next/cache";
 import { getBaseUrl } from "@/lib/site-url";
 
 function randomInviteCode(): string {
-  // Short, URL-safe, unambiguous-enough code for a 5-15 person friend group.
+  // Short and URL-safe, skips characters that look alike (0/O, 1/I).
   const alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
   let code = "";
   for (let i = 0; i < 7; i++) {

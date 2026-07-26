@@ -1,7 +1,7 @@
--- Table-level DELETE grants already exist from 0002_grants.sql, but no
--- policy permits any DELETE yet, so RLS blocks it outright. Add policies
--- for leaving a group (any member, their own row) and deleting a group
--- (organizer only; cascades to members, commitments, check-ins, streaks).
+-- The DELETE grants from 0002 exist, but there's no policy allowing one
+-- yet, so RLS blocks every delete. Add leaving a group (any member removes
+-- their own row) and deleting a group (organizer only, cascades to
+-- everything in it).
 
 create policy "members can leave a group"
   on public.group_members for delete

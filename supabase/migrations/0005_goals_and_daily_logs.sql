@@ -1,22 +1,17 @@
 -- Reworks the single-commitment-per-group model into multiple goals per
 -- person per group, each with its own day-of-week schedule and streak, plus
 -- a calendar heatmap. Only test data exists so far, so this drops and
--- rebuilds rather than migrating old rows.
+-- rebuilds instead of migrating old rows.
 
 drop table if exists public.streaks cascade;
 drop table if exists public.check_ins cascade;
 drop table if exists public.commitments cascade;
 drop function if exists public.handle_check_in();
 
--- ---------------------------------------------------------------------------
--- groups: add a timezone, used by the missed-day cron to know what "today"
--- and "yesterday" mean for this group.
--- ---------------------------------------------------------------------------
+-- Timezone lets the missed-day cron know what "today" and "yesterday" mean
+-- for this group.
 alter table public.groups add column timezone text not null default 'UTC';
 
--- ---------------------------------------------------------------------------
--- goals
--- ---------------------------------------------------------------------------
 create table public.goals (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
@@ -35,13 +30,10 @@ create table public.goals (
 
 alter table public.goals enable row level security;
 
--- ---------------------------------------------------------------------------
--- daily_logs
--- ---------------------------------------------------------------------------
--- No stored "pending" state: a row only ever gets written once a day is
--- resolved, either by the owner checking in (done/missed) or by the cron job
--- below inserting a missed row for a scheduled day nobody touched. The UI
--- computes "pending" on the fly for today when no row exists yet.
+-- No stored "pending" state. A row only gets written once a day is
+-- resolved, either by the owner checking in or by the cron job below
+-- marking a scheduled day nobody touched as missed. The UI figures out
+-- "pending" on the fly when today has no row yet.
 create table public.daily_logs (
   id uuid primary key default gen_random_uuid(),
   goal_id uuid not null references public.goals (id) on delete cascade,
@@ -53,9 +45,9 @@ create table public.daily_logs (
 
 alter table public.daily_logs enable row level security;
 
--- Same trigger logic as the old handle_check_in: because daily_logs rows
--- only ever exist for scheduled days, a plain increment-on-done /
--- reset-on-missed correctly tracks "consecutive scheduled days completed."
+-- Same idea as the old handle_check_in trigger: since daily_logs rows only
+-- ever exist for scheduled days, a plain increment-on-done, reset-on-missed
+-- already tracks consecutive scheduled days completed correctly.
 create function public.handle_daily_log_insert()
 returns trigger
 language plpgsql
@@ -81,9 +73,7 @@ create trigger on_daily_log_insert
 after insert on public.daily_logs
 for each row execute function public.handle_daily_log_insert();
 
--- ---------------------------------------------------------------------------
 -- RLS policies
--- ---------------------------------------------------------------------------
 
 create policy "goals are readable by group-mates"
   on public.goals for select
@@ -112,8 +102,6 @@ create policy "owner can submit today's log"
     and goal_id in (select id from public.goals where user_id = auth.uid())
   );
 
--- ---------------------------------------------------------------------------
--- Grants (mirrors 0002_grants.sql's pattern for the two new tables)
--- ---------------------------------------------------------------------------
+-- Grants (same pattern as 0002_grants.sql for the two new tables)
 grant select, insert, update on public.goals to authenticated;
 grant select, insert on public.daily_logs to authenticated;

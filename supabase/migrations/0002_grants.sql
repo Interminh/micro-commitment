@@ -1,8 +1,7 @@
--- Supabase normally grants base table privileges to `anon`/`authenticated`
--- automatically, but that didn't take effect for tables created via the SQL
--- editor here ("permission denied for table groups" on insert). RLS
--- policies from 0001_init.sql still govern which *rows* are visible/
--- writable; these grants just allow the roles to touch the tables at all.
+-- Tables created via the SQL editor didn't pick up Supabase's usual default
+-- grants to anon/authenticated, so inserts were failing with "permission
+-- denied." RLS still decides which rows are visible or writable; these
+-- grants just let the roles touch the tables at all.
 
 grant usage on schema public to anon, authenticated;
 
@@ -15,9 +14,8 @@ grant select, insert, update, delete on
   public.streaks
 to authenticated;
 
--- anon needs to read groups indirectly via the security-definer
--- get_group_by_invite_code() function (for the pre-sign-in invite preview),
--- which runs as the function owner regardless of table grants, so no
--- direct table grant to anon is needed here.
+-- anon reads groups indirectly through get_group_by_invite_code(), which
+-- runs as the function owner regardless of table grants, so it doesn't need
+-- a direct grant of its own.
 
 grant execute on function public.get_group_by_invite_code(text) to anon, authenticated;

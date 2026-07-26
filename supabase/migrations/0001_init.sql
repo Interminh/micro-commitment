@@ -1,11 +1,9 @@
 -- Micro-Commitment V1 schema
--- Entities per spec section 4: profiles, groups, group_members, commitments, check_ins, streaks
+-- profiles, groups, group_members, commitments, check_ins, streaks
 
 create extension if not exists "pgcrypto";
 
--- ---------------------------------------------------------------------------
--- profiles (mirrors auth.users, populated via trigger on signup)
--- ---------------------------------------------------------------------------
+-- profiles mirrors auth.users, populated by a trigger on signup
 create table public.profiles (
   id uuid primary key references auth.users (id) on delete cascade,
   name text,
@@ -36,9 +34,7 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute function public.handle_new_user();
 
--- ---------------------------------------------------------------------------
 -- groups
--- ---------------------------------------------------------------------------
 create table public.groups (
   id uuid primary key default gen_random_uuid(),
   name text not null,
@@ -49,9 +45,7 @@ create table public.groups (
 
 alter table public.groups enable row level security;
 
--- ---------------------------------------------------------------------------
 -- group_members
--- ---------------------------------------------------------------------------
 create table public.group_members (
   id uuid primary key default gen_random_uuid(),
   group_id uuid not null references public.groups (id) on delete cascade,
@@ -63,8 +57,8 @@ create table public.group_members (
 
 alter table public.group_members enable row level security;
 
--- Helper: group ids the current user belongs to. security definer so it can
--- be used inside RLS policies without recursive-policy issues.
+-- Group ids the current user belongs to. Security definer so RLS policies
+-- can call it without recursing into their own table.
 create function public.my_group_ids()
 returns setof uuid
 language sql
@@ -75,9 +69,8 @@ as $$
   select group_id from public.group_members where user_id = auth.uid();
 $$;
 
--- Secure invite-code lookup: lets a signed-in, not-yet-a-member user resolve
--- an invite code to a group without granting broad read access to the
--- groups table (which would let members enumerate other groups' codes).
+-- Looks up a group by invite code without exposing the whole groups table,
+-- so a signed-in but not-yet-a-member user can preview it before joining.
 create function public.get_group_by_invite_code(code text)
 returns table (id uuid, name text)
 language sql
@@ -88,9 +81,7 @@ as $$
   select id, name from public.groups where invite_code = code;
 $$;
 
--- ---------------------------------------------------------------------------
 -- commitments
--- ---------------------------------------------------------------------------
 create table public.commitments (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references public.profiles (id) on delete cascade,
@@ -101,17 +92,14 @@ create table public.commitments (
   created_at timestamptz not null default now()
 );
 
--- One active commitment per user per group (spec 2.1: "one active
--- commitment per user to start").
+-- One active commitment per user per group for V1.
 create unique index commitments_one_active_per_user_group
   on public.commitments (user_id, group_id)
   where active;
 
 alter table public.commitments enable row level security;
 
--- ---------------------------------------------------------------------------
 -- check_ins
--- ---------------------------------------------------------------------------
 create table public.check_ins (
   id uuid primary key default gen_random_uuid(),
   commitment_id uuid not null references public.commitments (id) on delete cascade,
@@ -123,9 +111,7 @@ create table public.check_ins (
 
 alter table public.check_ins enable row level security;
 
--- ---------------------------------------------------------------------------
--- streaks (derived aggregate, written only by the trigger below)
--- ---------------------------------------------------------------------------
+-- streaks: derived aggregate, written only by the trigger below
 create table public.streaks (
   id uuid primary key default gen_random_uuid(),
   commitment_id uuid not null unique references public.commitments (id) on delete cascade,
@@ -136,8 +122,8 @@ create table public.streaks (
 
 alter table public.streaks enable row level security;
 
--- Recompute streak whenever a check-in is written server-side, so streaks
--- can't be gamed by client-side manipulation (spec 5.3).
+-- Recomputes the streak whenever a check-in is written, server-side, so it
+-- can't be gamed by a client sending fake data.
 create function public.handle_check_in()
 returns trigger
 language plpgsql
@@ -167,9 +153,7 @@ create trigger on_check_in_insert
 after insert on public.check_ins
 for each row execute function public.handle_check_in();
 
--- ---------------------------------------------------------------------------
 -- RLS policies
--- ---------------------------------------------------------------------------
 
 -- profiles: readable by group-mates, writable by self only
 create policy "profiles are readable by group-mates"
@@ -186,8 +170,7 @@ create policy "users can update their own profile"
   on public.profiles for update
   using (id = auth.uid());
 
--- groups: readable by members; insertable by any signed-in user (creator);
--- updatable by the organizer only
+-- groups: readable by members, insertable by anyone signed in, updatable by the organizer
 create policy "groups are readable by members"
   on public.groups for select
   using (id in (select public.my_group_ids()));
@@ -205,8 +188,7 @@ create policy "organizer can update their group"
     )
   );
 
--- group_members: readable by fellow members; a user can insert their own
--- membership row (join flow) but not act on behalf of others
+-- group_members: readable by fellow members, insertable only for yourself (the join flow)
 create policy "group members are readable by group-mates"
   on public.group_members for select
   using (group_id in (select public.my_group_ids()));
@@ -215,7 +197,7 @@ create policy "users can add themselves to a group"
   on public.group_members for insert
   with check (user_id = auth.uid());
 
--- commitments: readable by group-mates; writable by the owner only
+-- commitments: readable by group-mates, writable by the owner only
 create policy "commitments are readable by group-mates"
   on public.commitments for select
   using (group_id in (select public.my_group_ids()));
@@ -228,8 +210,8 @@ create policy "users can update their own commitments"
   on public.commitments for update
   using (user_id = auth.uid());
 
--- check_ins: readable by group-mates (miss visibility is the core
--- mechanic); insertable only by the commitment owner, only for today
+-- check_ins: readable by group-mates so misses are visible, insertable only
+-- by the owner and only for today
 create policy "check-ins are readable by group-mates"
   on public.check_ins for select
   using (
@@ -246,8 +228,7 @@ create policy "owner can submit today's check-in"
     and commitment_id in (select id from public.commitments where user_id = auth.uid())
   );
 
--- streaks: readable by group-mates; no client-side insert/update policy;
--- only the security-definer trigger (owned by the table owner) writes here.
+-- streaks: readable by group-mates, writable only by the trigger above
 create policy "streaks are readable by group-mates"
   on public.streaks for select
   using (

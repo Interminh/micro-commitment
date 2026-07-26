@@ -1,11 +1,9 @@
--- Root cause of "new row violates row-level security policy for table
--- groups": our createGroup() code does insert(...).select().single(), which
--- RETURNING-filters the new row through the SELECT policy. The old SELECT
+-- createGroup() does insert(...).select().single(), and the RETURNING
+-- clause gets filtered through the SELECT policy same as any read. The old
 -- policy only allowed rows in my_group_ids(), but the creator's
--- group_members row doesn't exist yet at the moment the group is inserted.
--- The brand-new row failed visibility, and Postgres reported it as an
--- RLS violation. Let the creator see their own group directly, regardless
--- of membership timing.
+-- group_members row doesn't exist yet at that point, so Postgres reported
+-- the whole insert as an RLS violation. Let the creator see their own group
+-- right away, regardless of when the membership row lands.
 
 alter policy "any signed-in user can create a group"
   on public.groups

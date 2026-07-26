@@ -1,18 +1,17 @@
-// Missed-day cron: for every group, find "yesterday" in that group's own
-// timezone, then for every non-archived goal scheduled that weekday with no
-// daily_logs row yet, insert one with status='missed'. That insert fires
-// the same streak-reset trigger used for a normal check-in, so no separate
-// streak recompute step is needed here.
+// For every group, work out "yesterday" in that group's own timezone, then
+// mark any scheduled goal with no log for that date as missed. That insert
+// triggers the same streak reset a normal check-in would, so there's
+// nothing else to do here.
 //
-// There's no "pending" row to pre-seed: the UI computes pending for today
-// on the fly, so this function's only job is closing out yesterday.
+// No pending rows to pre-seed since the UI figures out "pending" on the
+// fly, so closing out yesterday is this function's whole job.
 //
-// Runs with the service role key so it bypasses RLS. This is the only
-// writer allowed to record a miss on a user's behalf.
+// Uses the service role key to bypass RLS. It's the only thing allowed to
+// record a miss on someone's behalf.
 //
 // Deploy: supabase functions deploy close-missed-days
-// Schedule hourly (idempotent and cheap), so each group's local midnight
-// gets picked up within the hour without per-timezone cron scheduling:
+// Run it hourly so each group's local midnight gets caught within the
+// hour, no per-timezone scheduling needed:
 //   supabase functions schedule close-missed-days --cron "0 * * * *"
 
 import { createClient } from "jsr:@supabase/supabase-js@2";

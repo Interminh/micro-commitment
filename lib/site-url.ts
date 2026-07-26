@@ -1,9 +1,8 @@
 import { headers } from "next/headers";
 
-// The `Origin` request header is only sent on certain request types (form
-// POSTs, fetch/XHR); a plain page load omits it, which made the invite
-// link render as a broken relative path. `Host` is always present, so
-// derive the base URL from that instead.
+// `Origin` only shows up on some requests (form posts, fetch), so a plain
+// page load left it blank and broke the invite link. `Host` is always
+// there, so build the URL from that instead.
 export async function getBaseUrl(): Promise<string> {
   const headersList = await headers();
   const host = headersList.get("host");

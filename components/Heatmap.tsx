@@ -35,8 +35,8 @@ function cellLabel(cell: DayCell): string {
     : `${cell.completed}/${cell.scheduled} goals completed on ${formatted}`;
 }
 
-// Groups a contiguous, ascending-date array of cells into GitHub-style
-// weekly columns (Sun-Sat rows), padding the first column so weekdays align.
+// Splits a contiguous run of dates into GitHub-style weekly columns
+// (Sun-Sat rows), padding the first column so the weekdays line up.
 function toColumns(cells: DayCell[]): (DayCell | null)[][] {
   if (cells.length === 0) return [];
   const firstWeekday = new Date(`${cells[0].date}T00:00:00Z`).getUTCDay();
