@@ -6,6 +6,7 @@ import { signOut } from "@/lib/actions";
 import { MemberRow, type MemberGoal } from "@/components/MemberRow";
 import { GroupHeatmap } from "@/components/GroupHeatmap";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
+import { GroupJoinLockToggle } from "@/components/GroupJoinLockToggle";
 import { isDueOn } from "@/lib/goals";
 import { dateRange, buildPersonCells, aggregateCells } from "@/lib/heatmap";
 import type { Goal, DailyLog, DailyLogStatus } from "@/lib/types";
@@ -26,7 +27,7 @@ export default async function GroupPage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, invite_code")
+    .select("id, name, invite_code, joining_locked")
     .eq("id", groupId)
     .maybeSingle();
 
@@ -121,6 +122,10 @@ export default async function GroupPage({
     (m) => m.profile.id === user.id && m.memberGoals.length > 0,
   );
 
+  const isOrganizer = (members ?? []).some(
+    (m) => m.role === "organizer" && (m.profiles as unknown as { id: string } | null)?.id === user.id,
+  );
+
   return (
     <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
       <div className="flex items-start justify-between gap-4">
@@ -160,11 +165,23 @@ export default async function GroupPage({
         </form>
       </div>
 
+      {isOrganizer && (
+        <div className="mt-6">
+          <GroupJoinLockToggle groupId={group.id} initialLocked={group.joining_locked} />
+        </div>
+      )}
+
       <div className="mt-6">
         <p className="mb-1.5 text-xs font-medium text-muted-foreground">
           Invite friends to this group
         </p>
-        <InviteLinkCard link={inviteLink} />
+        {group.joining_locked ? (
+          <p className="rounded-lg border border-border bg-surface p-3 text-sm text-muted-foreground">
+            Joining is locked, so the invite link won&apos;t work right now.
+          </p>
+        ) : (
+          <InviteLinkCard link={inviteLink} />
+        )}
       </div>
 
       {groupCells.length > 0 && (
@@ -180,9 +197,11 @@ export default async function GroupPage({
             name={profile.name ?? "Someone"}
             avatarUrl={profile.avatar_url}
             isSelf={profile.id === user.id}
+            memberId={profile.id}
             groupId={group.id}
             goals={memberGoals}
             heatmapCells={cells}
+            canKick={isOrganizer}
           />
         ))}
       </ul>
