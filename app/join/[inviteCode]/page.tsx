@@ -3,7 +3,6 @@ import { redirect } from "next/navigation";
 import { signInWithGoogle } from "@/lib/actions";
 import { AuthDomainNote } from "@/components/AuthDomainNote";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
-import { GoogleAuroraBackdrop } from "@/components/GoogleAuroraBackdrop";
 
 export default async function JoinPage({
   params,
@@ -36,15 +35,14 @@ export default async function JoinPage({
 
   if (!user) {
     return (
-      <main className="relative mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-center overflow-hidden px-6 text-center">
-        <GoogleAuroraBackdrop />
-        <p className="relative text-sm font-medium tracking-wide text-muted-foreground uppercase">
+      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-center px-6 text-center">
+        <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
           You&apos;re invited
         </p>
-        <h1 className="relative mt-2 text-2xl font-semibold tracking-tight">
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
           {group.name}
         </h1>
-        <p className="relative mt-3 text-sm text-muted-foreground">
+        <p className="mt-3 text-sm text-muted-foreground">
           Sign in to join and set your daily commitment.
         </p>
         <form
@@ -52,7 +50,7 @@ export default async function JoinPage({
             "use server";
             await signInWithGoogle(`/join/${inviteCode}`);
           }}
-          className="relative mt-6 w-full"
+          className="mt-6 w-full"
         >
           <GoogleSignInButton />
         </form>

@@ -29,16 +29,6 @@
   --heat-3: #38976b;
   --heat-4: #1d7a52;
   --heat-5: #0a5c3d;
-
-  /* Google sign-in glass button: the one spot on the page allowed to show
-     depth. Aurora tones are the brand navy unfolded into two blobs rather
-     than an arbitrary gradient. */
-  --aurora-gold: #d9a55b;
-  --aurora-blue: #6e8cb8;
-  --glass-bg: rgba(255, 255, 255, 0.5);
-  --glass-border: rgba(255, 255, 255, 0.6);
-  --glass-highlight: rgba(255, 255, 255, 0.8);
-  --glass-shadow: rgba(29, 53, 87, 0.18);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -70,13 +60,6 @@
     --heat-3: #2a9163;
     --heat-4: #3fb47f;
     --heat-5: #6fd9a4;
-
-    --aurora-gold: #d9a55b;
-    --aurora-blue: #4a6fa5;
-    --glass-bg: rgba(21, 24, 29, 0.45);
-    --glass-border: rgba(255, 255, 255, 0.12);
-    --glass-highlight: rgba(255, 255, 255, 0.18);
-    --glass-shadow: rgba(0, 0, 0, 0.45);
   }
 }
 
@@ -106,9 +89,6 @@
   --color-heat-4: var(--heat-4);
   --color-heat-5: var(--heat-5);
 
-  --color-aurora-gold: var(--aurora-gold);
-  --color-aurora-blue: var(--aurora-blue);
-
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
@@ -128,28 +108,28 @@ body {
   color: var(--color-brand-foreground);
 }
 
-/* Google sign-in: frosted glass over a private aurora backdrop. Scoped to
-   this button and its wrapper only — everywhere else stays flat. */
+/* Google sign-in: frosted glass, deliberately fixed to a light appearance
+   regardless of site theme (not tied to --color-* tokens). */
 .google-glass-btn {
   position: relative;
   overflow: hidden;
-  background: var(--glass-bg);
-  border: 1px solid var(--glass-border);
-  color: var(--color-foreground);
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  color: #131417;
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    0 12px 30px -8px var(--glass-shadow),
-    0 2px 8px -2px var(--glass-shadow);
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 12px 30px -8px rgba(29, 53, 87, 0.18),
+    0 2px 8px -2px rgba(29, 53, 87, 0.18);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .google-glass-btn:hover {
   transform: translateY(-2px);
   box-shadow:
-    inset 0 1px 0 var(--glass-highlight),
-    0 18px 40px -10px var(--glass-shadow),
-    0 4px 10px -2px var(--glass-shadow);
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 18px 40px -10px rgba(29, 53, 87, 0.18),
+    0 4px 10px -2px rgba(29, 53, 87, 0.18);
 }
 .google-glass-btn::after {
   content: "";
@@ -158,7 +138,7 @@ body {
   left: -60%;
   width: 40%;
   height: 100%;
-  background: linear-gradient(115deg, transparent 0%, var(--glass-highlight) 50%, transparent 100%);
+  background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.85) 50%, transparent 100%);
   opacity: 0.5;
   transform: skewX(-20deg);
   transition: left 0.7s ease;
@@ -168,42 +148,9 @@ body {
   left: 120%;
 }
 
-.google-aurora-blob {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  border-radius: 9999px;
-  filter: blur(70px);
-  animation: google-aurora-drift 22s ease-in-out infinite;
-}
-.google-aurora-gold {
-  width: 340px;
-  height: 340px;
-  margin-left: -260px;
-  margin-top: -220px;
-  background: var(--color-aurora-gold);
-  opacity: 0.35;
-}
-.google-aurora-blue {
-  width: 380px;
-  height: 380px;
-  margin-left: -60px;
-  margin-top: -80px;
-  background: var(--color-aurora-blue);
-  opacity: 0.32;
-  animation-delay: -11s;
-}
-@keyframes google-aurora-drift {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(24px, -18px) scale(1.06); }
-}
-
 @media (prefers-reduced-motion: reduce) {
   .google-glass-btn,
   .google-glass-btn::after {
     transition: none;
-  }
-  .google-aurora-blob {
-    animation: none;
   }
 }

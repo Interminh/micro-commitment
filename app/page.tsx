@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { AuthDomainNote } from "@/components/AuthDomainNote";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
-import { GoogleAuroraBackdrop } from "@/components/GoogleAuroraBackdrop";
 import { LeaveOrDeleteGroupButton } from "@/components/LeaveOrDeleteGroupButton";
 import { firstNameOf } from "@/lib/user";
 import type { MemberRole } from "@/lib/types";
@@ -98,9 +97,8 @@ export default async function LandingPage({
   }
 
   return (
-    <main className="relative flex flex-1 flex-col items-center justify-center overflow-hidden px-6">
-      <GoogleAuroraBackdrop />
-      <div className="relative w-full max-w-sm text-center">
+    <main className="flex flex-1 flex-col items-center justify-center px-6">
+      <div className="w-full max-w-sm text-center">
         <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
           Micro-Commitment
         </p>
