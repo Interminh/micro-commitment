@@ -108,28 +108,28 @@ body {
   color: var(--color-brand-foreground);
 }
 
-/* Google sign-in: frosted glass, deliberately fixed to a light appearance
-   regardless of site theme (not tied to --color-* tokens). */
+/* Google sign-in: frosted glass that follows the site theme, same as the
+   host clock chip below. */
 .google-glass-btn {
   position: relative;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  color: #131417;
+  background: color-mix(in srgb, var(--color-surface) 60%, transparent);
+  border: 1px solid var(--color-border);
+  color: var(--color-foreground);
   backdrop-filter: blur(20px) saturate(160%);
   -webkit-backdrop-filter: blur(20px) saturate(160%);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 12px 30px -8px rgba(29, 53, 87, 0.18),
-    0 2px 8px -2px rgba(29, 53, 87, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 12px 30px -8px rgba(0, 0, 0, 0.18),
+    0 2px 8px -2px rgba(0, 0, 0, 0.18);
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 .google-glass-btn:hover {
   transform: translateY(-2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 18px 40px -10px rgba(29, 53, 87, 0.18),
-    0 4px 10px -2px rgba(29, 53, 87, 0.18);
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 18px 40px -10px rgba(0, 0, 0, 0.18),
+    0 4px 10px -2px rgba(0, 0, 0, 0.18);
 }
 .google-glass-btn::after {
   content: "";
@@ -138,7 +138,12 @@ body {
   left: -60%;
   width: 40%;
   height: 100%;
-  background: linear-gradient(115deg, transparent 0%, rgba(255, 255, 255, 0.85) 50%, transparent 100%);
+  background: linear-gradient(
+    115deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    transparent 100%
+  );
   opacity: 0.5;
   transform: skewX(-20deg);
   transition: left 0.7s ease;
@@ -148,8 +153,7 @@ body {
   left: 120%;
 }
 
-/* Host clock chip: frosted glass that follows the site theme (unlike the
-   sign-in button, which is deliberately locked to light). */
+/* Host clock chip: same frosted-glass treatment, follows the site theme. */
 .host-glass-chip {
   background: color-mix(in srgb, var(--color-surface) 70%, transparent);
   border: 1px solid var(--color-border);
