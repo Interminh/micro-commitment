@@ -74,6 +74,23 @@ export default async function JoinPage({
     redirect(`/group/${group.id}`);
   }
 
+  if (group.joining_locked) {
+    return (
+      <main className="mx-auto flex w-full max-w-sm flex-1 flex-col items-center justify-center px-6 text-center">
+        <p className="text-sm font-medium tracking-wide text-muted-foreground uppercase">
+          You&apos;re invited
+        </p>
+        <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+          {group.name}
+        </h1>
+        <p className="mt-3 text-sm text-muted-foreground">
+          This group isn&apos;t accepting new members right now. Ask the
+          host to unlock joining and try again.
+        </p>
+      </main>
+    );
+  }
+
   const { error: joinError } = await supabase.from("group_members").insert({
     group_id: group.id,
     user_id: user.id,

@@ -165,6 +165,20 @@ export async function joinGroupByCode(
     return { error: "That invite code doesn't match a group." };
   }
 
+  if (group.joining_locked) {
+    const { data: existing } = await supabase
+      .from("group_members")
+      .select("group_id")
+      .eq("group_id", group.id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (!existing) {
+      return { error: "This group isn't accepting new members right now." };
+    }
+    redirect(`/group/${group.id}`);
+  }
+
   const { error: memberError } = await supabase.from("group_members").insert({
     group_id: group.id,
     user_id: user.id,
@@ -246,5 +260,46 @@ export async function deleteGroup(groupId: string): Promise<ActionState> {
   }
 
   revalidatePath("/");
+  return { error: null };
+}
+
+export async function kickMember(groupId: string, memberId: string): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  const { error } = await supabase
+    .from("group_members")
+    .delete()
+    .eq("group_id", groupId)
+    .eq("user_id", memberId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/group/${groupId}`);
+  return { error: null };
+}
+
+export async function setGroupJoinLock(groupId: string, locked: boolean): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  const { error } = await supabase
+    .from("groups")
+    .update({ joining_locked: locked })
+    .eq("id", groupId);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/group/${groupId}`);
   return { error: null };
 }
