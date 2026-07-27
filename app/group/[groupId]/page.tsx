@@ -98,6 +98,7 @@ export default async function GroupPage({
 
       const userGoals = allGoals.filter((g) => g.user_id === profile.id);
       const cells = dates.length > 0 ? buildPersonCells(dates, userGoals, logsByGoalAndDate) : [];
+      const isViewerOwned = profile.id === user.id;
 
       const memberGoals: MemberGoal[] = userGoals.map((g) => ({
         id: g.id,
@@ -105,6 +106,10 @@ export default async function GroupPage({
         currentStreak: g.current_streak,
         dueToday: isDueOn(g.active_days, todayWeekday),
         loggedStatus: (logsByGoalAndDate.get(`${g.id}:${today}`)?.status as DailyLogStatus | undefined) ?? null,
+        // Per-goal history is only ever computed (and sent to the client)
+        // for the signed-in user's own goals — nobody else's payload
+        // includes it, so only they can see a goal's individual calendar.
+        cells: isViewerOwned && dates.length > 0 ? buildPersonCells(dates, [g], logsByGoalAndDate) : undefined,
       }));
 
       return { profile, cells, memberGoals };

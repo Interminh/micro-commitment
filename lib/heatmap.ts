@@ -43,6 +43,16 @@ export function buildPersonCells(
   });
 }
 
+// Pads a (possibly partial or empty) set of cells out to every day of the
+// given calendar year, so the grid always renders Jan-Dec like GitHub's
+// contribution calendar regardless of how much real history exists.
+export function fillYear(cells: DayCell[], year: number): DayCell[] {
+  const byDate = new Map(cells.map((c) => [c.date, c]));
+  return dateRange(`${year}-01-01`, `${year}-12-31`).map(
+    (date) => byDate.get(date) ?? { date, completed: 0, scheduled: 0 },
+  );
+}
+
 export function aggregateCells(perPerson: DayCell[][]): DayCell[] {
   if (perPerson.length === 0 || perPerson[0].length === 0) return [];
   return perPerson[0].map((_, i) => {

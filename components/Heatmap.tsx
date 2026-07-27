@@ -1,12 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { fillYear } from "@/lib/heatmap";
 import type { DayCell } from "@/lib/types";
 
-const DEFAULT_WEEKS = 12;
 const MONTH_LABELS = [
   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+const WEEKDAY_LABELS = ["", "Mon", "", "Wed", "", "Fri", ""];
+const LEGEND_COLORS = [
+  "var(--color-heat-empty)",
+  "var(--color-heat-1)",
+  "var(--color-heat-2)",
+  "var(--color-heat-3)",
+  "var(--color-heat-4)",
+  "var(--color-heat-5)",
 ];
 
 interface TooltipState {
@@ -23,16 +32,18 @@ function bucketColor(completed: number, scheduled: number): string {
   return `var(--color-heat-${step})`;
 }
 
-function cellLabel(cell: DayCell): string {
-  const date = new Date(`${cell.date}T00:00:00Z`);
-  const formatted = date.toLocaleDateString("en-US", {
+function formatDate(date: string): string {
+  return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
     timeZone: "UTC",
   });
+}
+
+function defaultCellLabel(cell: DayCell): string {
   return cell.scheduled === 0
-    ? `No goals scheduled on ${formatted}`
-    : `${cell.completed}/${cell.scheduled} goals completed on ${formatted}`;
+    ? `No goals scheduled on ${formatDate(cell.date)}`
+    : `${cell.completed}/${cell.scheduled} goals completed on ${formatDate(cell.date)}`;
 }
 
 // Splits a contiguous run of dates into GitHub-style weekly columns
@@ -49,13 +60,22 @@ function toColumns(cells: DayCell[]): (DayCell | null)[][] {
   return columns;
 }
 
-export function Heatmap({ cells }: { cells: DayCell[] }) {
-  const [showFullHistory, setShowFullHistory] = useState(false);
+export function Heatmap({
+  cells,
+  cellLabel = defaultCellLabel,
+}: {
+  cells: DayCell[];
+  cellLabel?: (cell: DayCell) => string;
+}) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-  const allColumns = useMemo(() => toColumns(cells), [cells]);
-  const columns = showFullHistory ? allColumns : allColumns.slice(-DEFAULT_WEEKS);
-  const canExpand = allColumns.length > DEFAULT_WEEKS;
+  const year = useMemo(() => {
+    const last = cells[cells.length - 1];
+    return last ? new Date(`${last.date}T00:00:00Z`).getUTCFullYear() : new Date().getUTCFullYear();
+  }, [cells]);
+
+  const yearCells = useMemo(() => fillYear(cells, year), [cells, year]);
+  const columns = useMemo(() => toColumns(yearCells), [yearCells]);
 
   const monthMarkers = columns.map((column, i) => {
     const firstRealCell = column.find((c) => c !== null);
@@ -69,27 +89,32 @@ export function Heatmap({ cells }: { cells: DayCell[] }) {
     return month !== prevMonth ? MONTH_LABELS[month] : null;
   });
 
-  if (cells.length === 0) {
-    return <p className="text-xs text-muted-foreground">No history yet.</p>;
-  }
-
   function showTooltip(e: React.MouseEvent<HTMLDivElement>, cell: DayCell) {
     const rect = e.currentTarget.getBoundingClientRect();
     setTooltip({ label: cellLabel(cell), x: rect.right, y: rect.top });
   }
 
   return (
-    <div>
+    <div className="rounded-xl border border-border bg-surface p-4">
       <div className="overflow-x-auto pb-1">
         <div className="inline-flex flex-col gap-1">
-          <div className="flex gap-[3px]">
+          <div className="flex gap-[3px] pl-6">
             {monthMarkers.map((label, i) => (
-              <div key={i} className="w-[11px] text-[10px] text-muted-foreground">
+              <div key={i} className="w-[13px] text-[11px] text-muted-foreground">
                 {label ?? ""}
               </div>
             ))}
           </div>
+
           <div className="flex gap-[3px]">
+            <div className="flex w-6 flex-col gap-[3px]">
+              {WEEKDAY_LABELS.map((label, i) => (
+                <div key={i} className="h-[13px] text-[10px] leading-[13px] text-muted-foreground">
+                  {label}
+                </div>
+              ))}
+            </div>
+
             {columns.map((column, colIndex) => (
               <div key={colIndex} className="flex flex-col gap-[3px]">
                 {column.map((cell, rowIndex) =>
@@ -100,11 +125,11 @@ export function Heatmap({ cells }: { cells: DayCell[] }) {
                       aria-label={cellLabel(cell)}
                       onMouseEnter={(e) => showTooltip(e, cell)}
                       onMouseLeave={() => setTooltip(null)}
-                      className="h-[11px] w-[11px] rounded-[2px]"
+                      className="h-[13px] w-[13px] rounded-[3px] border border-black/[0.04] dark:border-white/[0.04]"
                       style={{ backgroundColor: bucketColor(cell.completed, cell.scheduled) }}
                     />
                   ) : (
-                    <div key={rowIndex} className="h-[11px] w-[11px]" />
+                    <div key={rowIndex} className="h-[13px] w-[13px]" />
                   ),
                 )}
               </div>
@@ -123,30 +148,17 @@ export function Heatmap({ cells }: { cells: DayCell[] }) {
         </div>
       )}
 
-      <div className="mt-2 flex items-center justify-between">
-        <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <p className="text-[11px] text-muted-foreground">
+          Hover a square to see that day&apos;s completions.
+        </p>
+        <div className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
           <span>Less</span>
-          {["var(--color-heat-empty)", "var(--color-heat-1)", "var(--color-heat-2)", "var(--color-heat-3)", "var(--color-heat-4)", "var(--color-heat-5)"].map(
-            (color, i) => (
-              <div
-                key={i}
-                className="h-[10px] w-[10px] rounded-[2px]"
-                style={{ backgroundColor: color }}
-              />
-            ),
-          )}
+          {LEGEND_COLORS.map((color, i) => (
+            <div key={i} className="h-[10px] w-[10px] rounded-[2px]" style={{ backgroundColor: color }} />
+          ))}
           <span>More</span>
         </div>
-
-        {canExpand && (
-          <button
-            type="button"
-            onClick={() => setShowFullHistory((v) => !v)}
-            className="cursor-pointer text-xs font-medium text-brand hover:underline"
-          >
-            {showFullHistory ? "Show less" : "Show full history"}
-          </button>
-        )}
       </div>
     </div>
   );

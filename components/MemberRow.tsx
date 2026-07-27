@@ -13,6 +13,9 @@ export interface MemberGoal {
   currentStreak: number;
   dueToday: boolean;
   loggedStatus: DailyLogStatus | null;
+  // Only populated for the signed-in user's own goals — never sent to the
+  // client for anyone else's, so only they can see their per-goal calendar.
+  cells?: DayCell[];
 }
 
 const DOT_COLOR: Record<string, string> = {
@@ -121,12 +124,16 @@ export function MemberRow({
                   isDue={goal.dueToday}
                   loggedStatus={goal.loggedStatus}
                   isOwner={isSelf}
+                  cells={goal.cells}
                 />
               ))}
             </div>
           )}
 
           <div className="mt-3">
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              {isSelf ? "Your activity" : `${name}'s activity`}
+            </p>
             <Heatmap cells={heatmapCells} />
           </div>
         </div>
