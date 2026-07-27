@@ -15,6 +15,7 @@ export interface Group {
   invite_code: string;
   created_by: string;
   timezone: string;
+  joining_locked: boolean;
   created_at: string;
 }
 
