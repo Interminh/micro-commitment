@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { submitDailyLog } from "@/lib/actions";
+import { submitDailyLog, undoDailyLog } from "@/lib/actions";
 import type { DailyLogStatus } from "@/lib/types";
 
 export function DailyLogButtons({
@@ -29,17 +29,42 @@ export function DailyLogButtons({
     });
   }
 
+  function undo() {
+    setError(null);
+    startTransition(async () => {
+      const result = await undoDailyLog(goalId, groupId);
+      if (result.error) {
+        setError(result.error);
+      } else {
+        setStatus(null);
+      }
+    });
+  }
+
   if (status === "done" || status === "missed") {
     return (
-      <span
-        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
-          status === "done"
-            ? "bg-success-bg text-success"
-            : "bg-danger-bg text-danger"
-        }`}
-      >
-        {status === "done" ? "Done today" : "Missed"}
-      </span>
+      <div className="flex flex-col items-end gap-1">
+        <div className="flex items-center gap-2">
+          <span
+            className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium ${
+              status === "done"
+                ? "bg-success-bg text-success"
+                : "bg-danger-bg text-danger"
+            }`}
+          >
+            {status === "done" ? "Done today" : "Missed"}
+          </span>
+          <button
+            type="button"
+            onClick={undo}
+            disabled={isPending}
+            className="cursor-pointer text-xs font-medium text-muted-foreground transition-colors hover:text-foreground hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Undo
+          </button>
+        </div>
+        {error && <p className="text-xs text-danger">{error}</p>}
+      </div>
     );
   }
 

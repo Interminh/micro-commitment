@@ -97,8 +97,8 @@ export function GoalRow({
           <StreakBadge current={currentStreak} />
         </div>
 
-        {isOwner && status === "pending" ? (
-          <DailyLogButtons goalId={goalId} groupId={groupId} initialStatus={null} />
+        {isOwner && isDue ? (
+          <DailyLogButtons goalId={goalId} groupId={groupId} initialStatus={loggedStatus} />
         ) : (
           <StatusBadge status={status} />
         )}
@@ -128,7 +128,7 @@ export function GoalRow({
 
       {canShowCalendar && showCalendar && cells && (
         <div className="mt-3 pl-6">
-          <Heatmap cells={cells} cellLabel={goalCellLabel} />
+          <Heatmap cells={cells} cellLabel={goalCellLabel} variant="binary" />
         </div>
       )}
     </div>

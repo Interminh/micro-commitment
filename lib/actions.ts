@@ -225,6 +225,29 @@ export async function submitDailyLog(goalId: string, groupId: string, status: "d
   return { error: null };
 }
 
+export async function undoDailyLog(goalId: string, groupId: string): Promise<ActionState> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/");
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const { error } = await supabase
+    .from("daily_logs")
+    .delete()
+    .eq("goal_id", goalId)
+    .eq("date", today);
+
+  if (error) {
+    return { error: error.message };
+  }
+
+  revalidatePath(`/group/${groupId}`);
+  return { error: null };
+}
+
 export async function leaveGroup(groupId: string): Promise<ActionState> {
   const supabase = await createClient();
   const {
