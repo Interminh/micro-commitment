@@ -32,6 +32,14 @@ function bucketColor(completed: number, scheduled: number): string {
   return `var(--color-heat-${step})`;
 }
 
+// Per-goal calendars aren't a magnitude scale — a day is either done,
+// missed, or not due — so they get a flat done/missed/blank read instead of
+// the 5-step ramp used for group and personal activity.
+function binaryColor(completed: number, scheduled: number): string {
+  if (scheduled === 0) return "transparent";
+  return completed > 0 ? "var(--color-success)" : "var(--color-danger)";
+}
+
 function formatDate(date: string): string {
   return new Date(`${date}T00:00:00Z`).toLocaleDateString("en-US", {
     month: "short",
@@ -63,11 +71,14 @@ function toColumns(cells: DayCell[]): (DayCell | null)[][] {
 export function Heatmap({
   cells,
   cellLabel = defaultCellLabel,
+  variant = "scale",
 }: {
   cells: DayCell[];
   cellLabel?: (cell: DayCell) => string;
+  variant?: "scale" | "binary";
 }) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const colorFor = variant === "binary" ? binaryColor : bucketColor;
 
   const year = useMemo(() => {
     const last = cells[cells.length - 1];
@@ -126,7 +137,7 @@ export function Heatmap({
                       onMouseEnter={(e) => showTooltip(e, cell)}
                       onMouseLeave={() => setTooltip(null)}
                       className="h-[13px] w-[13px] rounded-[3px] border border-black/[0.04] dark:border-white/[0.04]"
-                      style={{ backgroundColor: bucketColor(cell.completed, cell.scheduled) }}
+                      style={{ backgroundColor: colorFor(cell.completed, cell.scheduled) }}
                     />
                   ) : (
                     <div key={rowIndex} className="h-[13px] w-[13px]" />
@@ -152,13 +163,26 @@ export function Heatmap({
         <p className="text-[11px] text-muted-foreground">
           Hover a square to see that day&apos;s completions.
         </p>
-        <div className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
-          <span>Less</span>
-          {LEGEND_COLORS.map((color, i) => (
-            <div key={i} className="h-[10px] w-[10px] rounded-[2px]" style={{ backgroundColor: color }} />
-          ))}
-          <span>More</span>
-        </div>
+        {variant === "binary" ? (
+          <div className="flex shrink-0 items-center gap-3 text-[11px] text-muted-foreground">
+            <span className="flex items-center gap-1.5">
+              <span className="h-[10px] w-[10px] rounded-[2px]" style={{ backgroundColor: "var(--color-success)" }} />
+              Completed
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-[10px] w-[10px] rounded-[2px]" style={{ backgroundColor: "var(--color-danger)" }} />
+              Missed
+            </span>
+          </div>
+        ) : (
+          <div className="flex shrink-0 items-center gap-1 text-[11px] text-muted-foreground">
+            <span>Less</span>
+            {LEGEND_COLORS.map((color, i) => (
+              <div key={i} className="h-[10px] w-[10px] rounded-[2px]" style={{ backgroundColor: color }} />
+            ))}
+            <span>More</span>
+          </div>
+        )}
       </div>
     </div>
   );
