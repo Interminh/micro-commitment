@@ -148,6 +148,16 @@ body {
   left: 120%;
 }
 
+/* Host clock chip: frosted glass that follows the site theme (unlike the
+   sign-in button, which is deliberately locked to light). */
+.host-glass-chip {
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  border: 1px solid var(--color-border);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.16);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .google-glass-btn,
   .google-glass-btn::after {

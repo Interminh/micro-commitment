@@ -7,6 +7,7 @@ import { MemberRow, type MemberGoal } from "@/components/MemberRow";
 import { GroupHeatmap } from "@/components/GroupHeatmap";
 import { InviteLinkCard } from "@/components/InviteLinkCard";
 import { GroupJoinLockToggle } from "@/components/GroupJoinLockToggle";
+import { HostClock } from "@/components/HostClock";
 import { isDueOn } from "@/lib/goals";
 import { dateRange, buildPersonCells, aggregateCells } from "@/lib/heatmap";
 import type { Goal, DailyLog, DailyLogStatus } from "@/lib/types";
@@ -27,7 +28,7 @@ export default async function GroupPage({
 
   const { data: group } = await supabase
     .from("groups")
-    .select("id, name, invite_code, joining_locked")
+    .select("id, name, invite_code, joining_locked, timezone")
     .eq("id", groupId)
     .maybeSingle();
 
@@ -217,6 +218,8 @@ export default async function GroupPage({
       >
         {currentUserHasGoals ? "+ Add another goal" : "Set your first goal in this group →"}
       </Link>
+
+      <HostClock timezone={group.timezone} />
     </main>
   );
 }
