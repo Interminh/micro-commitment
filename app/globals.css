@@ -425,38 +425,53 @@ body {
   transform: translate(-50%, -50%);
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
 }
+/* Fixed widths (not padding-driven) so the cursor's landing spot below is a
+   known coordinate, not a guess at rendered text width. */
 .il-mini-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
   font-size: 8px;
   font-weight: 600;
-  padding: 3px 7px;
   border-radius: 5px;
+  white-space: nowrap;
 }
 .il-mini-btn.done {
+  width: 54px;
   background: var(--color-success);
   color: #fff;
 }
 .il-mini-btn.miss {
+  width: 42px;
   border: 1px solid var(--color-border);
   color: var(--color-muted-foreground);
 }
 .il-badge-result {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 18px;
+  width: 54px;
   font-size: 8px;
   font-weight: 600;
-  padding: 3px 8px;
   border-radius: 999px;
   background: var(--color-success-bg);
   color: var(--color-success);
+  white-space: nowrap;
 }
 .il-undo-mini {
   font-size: 7px;
   color: var(--color-muted-foreground);
   text-decoration: underline;
 }
+/* Lands on the done button's center: the buttons row (100px: 54 + 6 + 42)
+   is centered in a 160x56 box, so "done" spans x:[29,83], y:[19,37]. */
 .il-log-cursor {
-  top: 46%;
-  left: 43%;
+  top: 50%;
+  left: 35%;
   animation: il-log-cursor 3.6s ease-in-out infinite;
 }
 .il-log-buttons {
@@ -517,9 +532,11 @@ body {
   0%, 28% { transform: translateX(0); }
   40%, 100% { transform: translateX(14px); }
 }
+/* The track+knob assembly is centered in the icon box via flex, so the
+   box's own center is the track's center too — no separate math needed. */
 .il-lock-cursor {
-  top: 30%;
-  left: 62%;
+  top: 50%;
+  left: 50%;
   animation: il-lock-cursor 3.6s ease-in-out infinite;
 }
 @keyframes il-lock-cursor {

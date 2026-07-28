@@ -53,11 +53,11 @@ function CheckInIllustration() {
   return (
     <div className="il-log-demo">
       <div className="il-log-buttons">
-        <span className="il-mini-btn done">Done</span>
+        <span className="il-mini-btn done">Completed</span>
         <span className="il-mini-btn miss">Missed</span>
       </div>
       <div className="il-log-result">
-        <span className="il-badge-result">Done today</span>
+        <span className="il-badge-result">Completed</span>
         <span className="il-undo-mini">Undo</span>
       </div>
       <div className="il-cursor il-log-cursor" />
@@ -234,7 +234,7 @@ export function HelpGuide() {
                         {step.body}
                       </p>
                     </div>
-                    <div className="relative flex h-13 w-27 flex-shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-border bg-background/60">
+                    <div className="relative flex h-14 w-40 flex-shrink-0 items-center justify-center overflow-hidden rounded-[10px] border border-border bg-background/60">
                       <step.Illustration />
                     </div>
                   </div>
