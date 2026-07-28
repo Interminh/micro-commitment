@@ -22,7 +22,7 @@ declare
   restored_streak int;
 begin
   if old.status = 'done' then
-    -- The insert did current_streak + 1; undo just reverses that.
+    -- The insert did current_streak + 1; undo just reverses that..
     update public.goals
       set current_streak = greatest(current_streak - 1, 0)
       where id = old.goal_id;
