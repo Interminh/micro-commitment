@@ -40,7 +40,7 @@ export default async function LandingPage({
     const firstName = firstNameOf(user);
 
     return (
-      <main className="mx-auto w-full max-w-md flex-1 px-6 py-12">
+      <main className="mx-auto w-full max-w-md flex-1 px-6 pt-12 pb-24">
         <div className="flex items-start justify-between gap-4">
           <h1 className="text-2xl font-semibold tracking-tight">
             {firstName ? `${firstName}'s Groups` : "Your Groups"}

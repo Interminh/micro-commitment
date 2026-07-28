@@ -133,7 +133,7 @@ export default async function GroupPage({
   );
 
   return (
-    <main className="mx-auto w-full max-w-2xl flex-1 px-6 py-10">
+    <main className="mx-auto w-full max-w-2xl flex-1 px-6 pt-10 pb-24">
       <div className="flex items-start justify-between gap-4">
         <div>
           <Link
